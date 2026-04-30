@@ -11,25 +11,50 @@
     <div class="login-card">
       <h1>🔐 Insighta Labs+</h1>
       <p>Sign in to access the Profile Intelligence System</p>
-      <button class="github-btn" onclick="loginWithGitHub()">
+      <button class="github-btn" id="githubLoginBtn">
         🚀 Continue with GitHub
       </button>
+      <div id="errorMessage" style="color: red; margin-top: 10px; display: none;"></div>
     </div>
   </div>
   <script>
     const API_BASE_URL = 'https://hngstage3.onrender.com';
     
-    async function loginWithGitHub() {
+    document.getElementById('githubLoginBtn').addEventListener('click', async function() {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.style.display = 'none';
+      
       try {
-        // Fetch the GitHub OAuth URL from your backend
-        const response = await fetch(`${API_BASE_URL}/auth/github`);
+        console.log('Fetching GitHub auth URL from:', `${API_BASE_URL}/auth/github`);
+        
+        const response = await fetch(`${API_BASE_URL}/auth/github`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
         const data = await response.json();
-        window.location.href = data.url;
+        console.log('Response data:', data);
+        
+        if (data.url) {
+          console.log('Redirecting to:', data.url);
+          window.location.href = data.url;
+        } else {
+          throw new Error('No URL returned from server');
+        }
       } catch (error) {
-        console.error('Login failed:', error);
-        alert('Failed to initiate login. Please try again.');
+        console.error('Login error:', error);
+        errorDiv.textContent = `Login failed: ${error.message}. Please try again.`;
+        errorDiv.style.display = 'block';
       }
-    }
+    });
   </script>
 </body>
 </html>
