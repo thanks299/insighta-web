@@ -45,36 +45,66 @@
 
   <script>
     const API_BASE_URL = 'https://hngstage3.onrender.com';
+    
+    // Get token from URL or localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    let token = urlParams.get('token');
+    
+    if (token) {
+      // Save token to localStorage
+      localStorage.setItem('access_token', token);
+      // Remove token from URL to keep it clean
+      window.history.replaceState({}, document.title, window.location.pathname);
+      console.log('✅ Token saved from URL');
+    } else {
+      token = localStorage.getItem('access_token');
+    }
+    
+    // If no token, redirect to login
+    if (!token) {
+      console.log('No token found, redirecting to login');
+      window.location.href = '/login';
+    }
 
     async function fetchWithAuth(url) {
+      const storedToken = localStorage.getItem('access_token');
+      if (!storedToken) {
+        window.location.href = '/login';
+        throw new Error('No token');
+      }
+      
       const response = await fetch(url, {
         headers: {
           'X-API-Version': '1',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`
         },
-        credentials: 'include'
+        credentials: 'omit'  // Don't use cookies, use Authorization header
       });
+      
+      if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+      }
       return response;
     }
 
     async function loadDashboard() {
       try {
-        // Get user info
-        const whoami = await fetchWithAuth(`${API_BASE_URL}/api/whoami`);
-        
-        // Get profiles stats
         const profiles = await fetchWithAuth(`${API_BASE_URL}/api/profiles?limit=5&page=1`);
         const profilesData = await profiles.json();
         
         document.getElementById('totalProfiles').textContent = profilesData.total || 0;
         document.getElementById('totalPages').textContent = profilesData.total_pages || 0;
-        document.getElementById('role').textContent = 'Loading...';
+        
+        // Try to get role from somewhere
+        document.getElementById('role').textContent = 'User';
         
         // Render recent profiles
         const recentDiv = document.getElementById('recentProfiles');
         if (profilesData.data && profilesData.data.length > 0) {
           recentDiv.innerHTML = `
-            <table>
+            <table class="table">
               <thead>
                 <tr><th>Name</th><th>Gender</th><th>Age</th><th>Country</th><th>Created</th></tr>
               </thead>
@@ -100,7 +130,9 @@
       }
     }
 
-    loadDashboard();
+    if (token) {
+      loadDashboard();
+    }
   </script>
 </body>
 </html>
