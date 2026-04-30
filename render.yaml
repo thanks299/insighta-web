@@ -12,3 +12,5 @@ services:
         value: https://hngstage3.onrender.com
       - key: WEB_BASE_URL
         value: https://insighta-web.onrender.com
+      - key: NODE_ENV
+        value: production
