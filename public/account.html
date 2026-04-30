@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account - Insighta Labs+</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/dashboard" class="navbar-brand">📊 Insighta Labs+</a>
+    <ul class="navbar-nav">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/profiles">Profiles</a></li>
+      <li><a href="/search">Search</a></li>
+      <li><a href="/account">Account</a></li>
+      <li><a href="/logout">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <h1>Account Settings</h1>
+    
+    <div class="card">
+      <h2>User Information</h2>
+      <div id="userInfo">
+        <div class="loading">Loading user information...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Actions</h2>
+      <button onclick="logout()" class="btn btn-danger">Logout</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'https://hngstage3.onrender.com';
+
+    async function fetchWithAuth(url) {
+      const response = await fetch(url, {
+        headers: {
+          'X-API-Version': '1',
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      return response;
+    }
+
+    async function loadUserInfo() {
+      try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/profiles?limit=1`);
+        // We don't have a dedicated /me endpoint, so just check if authenticated
+        if (response.ok) {
+          document.getElementById('userInfo').innerHTML = `
+            <p>✅ You are logged in to Insighta Labs+</p>
+            <p>Your session is active. Use the navigation menu to explore profiles.</p>
+            <p>Token-based authentication via HTTP-only cookies is active.</p>
+          `;
+        } else {
+          document.getElementById('userInfo').innerHTML = '<p>⚠️ Not logged in. Please <a href="/login">login</a>.</p>';
+        }
+      } catch (error) {
+        document.getElementById('userInfo').innerHTML = '<p>⚠️ Not logged in. Please <a href="/login">login</a>.</p>';
+      }
+    }
+
+    function logout() {
+      window.location.href = '/logout';
+    }
+
+    loadUserInfo();
+  </script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search - Insighta Labs+</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/dashboard" class="navbar-brand">📊 Insighta Labs+</a>
+    <ul class="navbar-nav">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/profiles">Profiles</a></li>
+      <li><a href="/search">Search</a></li>
+      <li><a href="/account">Account</a></li>
+      <li><a href="/logout">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <h1>Natural Language Search</h1>
+    
+    <div class="card">
+      <form id="searchForm">
+        <input type="text" id="query" placeholder="e.g., young males from nigeria, seniors above 70, teenagers" style="width: 70%; padding: 10px;">
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+      <p class="help-text" style="margin-top: 10px; color: #666;">
+        Examples: "young males", "females from kenya", "seniors", "adults with high confidence"
+      </p>
+    </div>
+
+    <div class="card">
+      <div id="searchResults">
+        <div class="loading">Enter a search query above...</div>
+      </div>
+      <div id="parsedQuery" style="margin-top: 10px; color: #666;"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'https://hngstage3.onrender.com';
+
+    async function fetchWithAuth(url) {
+      const response = await fetch(url, {
+        headers: {
+          'X-API-Version': '1',
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      return response;
+    }
+
+    async function performSearch(query) {
+      if (!query.trim()) {
+        document.getElementById('searchResults').innerHTML = '<p>Please enter a search query.</p>';
+        document.getElementById('parsedQuery').innerHTML = '';
+        return;
+      }
+      
+      document.getElementById('searchResults').innerHTML = '<div class="loading">Searching...</div>';
+      
+      try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/profiles/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          renderResults(data.data);
+          if (data.query_parsed) {
+            document.getElementById('parsedQuery').innerHTML = `<small>🔍 Parsed: ${JSON.stringify(data.query_parsed)}</small>`;
+          }
+        } else {
+          document.getElementById('searchResults').innerHTML = '<p>No results found.</p>';
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        document.getElementById('searchResults').innerHTML = '<p>Error performing search. Please try again.</p>';
+      }
+    }
+
+    function renderResults(profiles) {
+      if (!profiles || profiles.length === 0) {
+        document.getElementById('searchResults').innerHTML = '<p>No profiles found matching your search.</p>';
+        return;
+      }
+      
+      const html = `
+        <h3>Found ${profiles.length} profiles</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Gender</th>
+              <th>Age</th>
+              <th>Country</th>
+              <th>Confidence</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${profiles.map(p => `
+              <tr>
+                <td><a href="/profile-detail?id=${p.id}">${p.name}</a></td>
+                <td>${p.gender || 'N/A'}</td>
+                <td>${p.age || 'N/A'}</td>
+                <td>${p.country_id || 'N/A'}</td>
+                <td>${Math.round((p.gender_probability || 0) * 100)}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('searchResults').innerHTML = html;
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const query = document.getElementById('query').value;
+      performSearch(query);
+    });
+  </script>
+</body>
+</html>

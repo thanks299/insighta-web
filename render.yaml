@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: insighta-web
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: API_BASE_URL
+        value: https://hngstage3.onrender.com
+      - key: WEB_BASE_URL
+        value: https://insighta-web.onrender.com

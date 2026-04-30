@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profiles - Insighta Labs+</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/dashboard" class="navbar-brand">📊 Insighta Labs+</a>
+    <ul class="navbar-nav">
+      <li><a href="/dashboard">Dashboard</a></li>
+      <li><a href="/profiles">Profiles</a></li>
+      <li><a href="/search">Search</a></li>
+      <li><a href="/account">Account</a></li>
+      <li><a href="/logout">Logout</a></li>
+    </ul>
+  </nav>
+
+  <div class="container">
+    <h1>Profiles</h1>
+    
+    <div class="card">
+      <form class="filter-form" id="filterForm">
+        <input type="text" name="gender" placeholder="Gender (male/female)" id="gender">
+        <input type="text" name="country" placeholder="Country code (NG, KE, GH)" id="country">
+        <input type="text" name="age_group" placeholder="Age group" id="ageGroup">
+        <input type="number" name="min_age" placeholder="Min age" id="minAge">
+        <input type="number" name="max_age" placeholder="Max age" id="maxAge">
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
+        <button type="button" class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <div id="profilesTable">
+        <div class="loading">Loading...</div>
+      </div>
+      <div id="pagination" class="pagination"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'https://hngstage3.onrender.com';
+    let currentPage = 1;
+    let currentFilters = {};
+
+    async function fetchWithAuth(url) {
+      const response = await fetch(url, {
+        headers: {
+          'X-API-Version': '1',
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      return response;
+    }
+
+    async function loadProfiles() {
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: 10,
+        ...currentFilters
+      });
+      
+      try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/profiles?${params}`);
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          renderProfilesTable(data.data);
+          renderPagination(data);
+        } else {
+          document.getElementById('profilesTable').innerHTML = '<p>Failed to load profiles.</p>';
+        }
+      } catch (error) {
+        console.error('Error loading profiles:', error);
+        document.getElementById('profilesTable').innerHTML = '<p>Error loading profiles. Please <a href="/login">login again</a>.</p>';
+      }
+    }
+
+    function renderProfilesTable(profiles) {
+      if (!profiles || profiles.length === 0) {
+        document.getElementById('profilesTable').innerHTML = '<p>No profiles found.</p>';
+        return;
+      }
+      
+      const html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Gender</th>
+              <th>Age</th>
+              <th>Country</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${profiles.map(p => `
+              <tr>
+                <td>${p.name}</td>
+                <td>${p.gender || 'N/A'}</td>
+                <td>${p.age || 'N/A'}</td>
+                <td>${p.country_id || 'N/A'}</td>
+                <td>${new Date(p.created_at).toLocaleDateString()}</td>
+                <td><a href="/profile-detail?id=${p.id}">View</a></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      document.getElementById('profilesTable').innerHTML = html;
+    }
+
+    function renderPagination(data) {
+      if (data.total_pages <= 1) {
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      for (let i = 1; i <= Math.min(data.total_pages, 10); i++) {
+        html += `<a href="#" onclick="goToPage(${i}); return false;" class="${i === currentPage ? 'active' : ''}">${i}</a>`;
+      }
+      document.getElementById('pagination').innerHTML = html;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      loadProfiles();
+    }
+
+    function applyFilters() {
+      currentFilters = {
+        gender: document.getElementById('gender').value,
+        country_id: document.getElementById('country').value,
+        age_group: document.getElementById('ageGroup').value,
+        min_age: document.getElementById('minAge').value,
+        max_age: document.getElementById('maxAge').value
+      };
+      Object.keys(currentFilters).forEach(key => {
+        if (!currentFilters[key]) delete currentFilters[key];
+      });
+      currentPage = 1;
+      loadProfiles();
+    }
+
+    function resetFilters() {
+      document.getElementById('filterForm').reset();
+      currentFilters = {};
+      currentPage = 1;
+      loadProfiles();
+    }
+
+    document.getElementById('filterForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      applyFilters();
+    });
+
+    loadProfiles();
+  </script>
+</body>
+</html>
