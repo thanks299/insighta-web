@@ -16,14 +16,12 @@
       </button>
     </div>
   </div>
-
   <script>
-    const API_BASE_URL = window.location.origin === 'http://localhost:3001' 
-      ? 'https://hngstage3.onrender.com' 
-      : window.location.origin;
-
+    const API_BASE_URL = 'https://hngstage3.onrender.com';
+    
     async function loginWithGitHub() {
       try {
+        // Fetch the GitHub OAuth URL from your backend
         const response = await fetch(`${API_BASE_URL}/auth/github`);
         const data = await response.json();
         window.location.href = data.url;
