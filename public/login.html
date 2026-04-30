@@ -25,7 +25,8 @@
       errorDiv.style.display = 'none';
       
       try {
-        console.log('Fetching GitHub auth URL from:', `${API_BASE_URL}/auth/github`);
+        console.log('🔐 GitHub login button clicked');
+        console.log('📤 Fetching GitHub auth URL from:', `${API_BASE_URL}/auth/github`);
         
         const response = await fetch(`${API_BASE_URL}/auth/github`, {
           method: 'GET',
@@ -34,23 +35,27 @@
           }
         });
         
-        console.log('Response status:', response.status);
+        console.log('📥 Response status:', response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
         const data = await response.json();
-        console.log('Response data:', data);
+        console.log('📦 Response data:', data);
         
         if (data.url) {
-          console.log('Redirecting to:', data.url);
+          // ✅ Use URL as-is from backend
+          // GitHub will redirect to backend callback (registered)
+          // Backend will handle token exchange and redirect to frontend
+          console.log('✅ Using OAuth URL from backend');
+          console.log('➡️ Redirecting to GitHub...');
           window.location.href = data.url;
         } else {
           throw new Error('No URL returned from server');
         }
       } catch (error) {
-        console.error('Login error:', error);
+        console.error('❌ Login error:', error);
         errorDiv.textContent = `Login failed: ${error.message}. Please try again.`;
         errorDiv.style.display = 'block';
       }
